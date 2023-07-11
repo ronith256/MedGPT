@@ -1,5 +1,6 @@
 package com.lucario.gpt;
 
+import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,8 +15,10 @@ import java.util.List;
 public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MyViewHolder> {
 
     List<Message> messageList;
-    public MessageAdapter(List<Message> messageList) {
+    MessageDoneListener listener;
+    public MessageAdapter(List<Message> messageList, MessageDoneListener listener) {
         this.messageList = messageList;
+        this.listener = listener;
     }
 
     @NonNull
@@ -29,14 +32,18 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MyViewHo
     @Override
     public void onBindViewHolder(@NonNull MyViewHolder holder, int position) {
         Message message = messageList.get(position);
-        if(message.getSentBy().equals(Message.SENT_BY_ME)){
+        if (message.getSentBy().equals(Message.SENT_BY_ME)) {
             holder.leftChatView.setVisibility(View.GONE);
             holder.rightChatView.setVisibility(View.VISIBLE);
             holder.rightTextView.setText(message.getMessage());
-        }else{
+        } else {
             holder.rightChatView.setVisibility(View.GONE);
             holder.leftChatView.setVisibility(View.VISIBLE);
-            holder.leftTextView.setText(message.getMessage());
+            if (message.finished) {
+                holder.leftTextView.setText(message.getMessage());
+            } else {
+                holder.leftTextView.setText(message.getMessage());
+            }
         }
     }
 
@@ -44,6 +51,7 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MyViewHo
     public int getItemCount() {
         return messageList.size();
     }
+
 
     public class MyViewHolder extends RecyclerView.ViewHolder{
         LinearLayout leftChatView,rightChatView;
@@ -56,6 +64,10 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MyViewHo
             leftTextView = itemView.findViewById(R.id.left_chat_text_view);
             rightTextView = itemView.findViewById(R.id.right_chat_text_view);
         }
+    }
+
+    public interface MessageDoneListener{
+        public void setFirstTime(int position);
     }
 }
 

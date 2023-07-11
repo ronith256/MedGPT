@@ -1,6 +1,7 @@
 package com.lucario.gpt;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 
 public class Message implements Serializable {
     public static String SENT_BY_ME = "me";
@@ -10,6 +11,15 @@ public class Message implements Serializable {
 
     String message;
     String sentBy;
+    int currentIndex;
+    boolean firstTime;
+
+    public void setFinished(boolean finished) {
+        this.finished = finished;
+//        this.message = null;
+    }
+
+    boolean finished;
 
     public String getMessage() {
         return message;
@@ -27,8 +37,13 @@ public class Message implements Serializable {
         this.sentBy = sentBy;
     }
 
+    public void append(String msg){message = message + msg;}
+    public void setFirstTime(boolean firstTime) {this.firstTime = firstTime;}
     public Message(String message, String sentBy) {
-        this.message = message;
+        this.message = "";
+        append(message);
         this.sentBy = sentBy;
+        this.firstTime = true;
+        this.currentIndex = 0;
     }
 }

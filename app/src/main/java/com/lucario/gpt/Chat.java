@@ -9,6 +9,14 @@ public class Chat implements Serializable {
     private String mLatestChat;
     private int chatId;
 
+    private int recordNumber = 0;
+    public void incrementRecordNumber(){
+        this.recordNumber++;
+    }
+
+    public int getRecordNumber(){
+        return this.recordNumber;
+    }
     public boolean isFirstPrompt() {
         return isFirstPrompt;
     }
@@ -39,6 +47,16 @@ public class Chat implements Serializable {
     }
 
     long sessionStartTime;
+
+    public void setSessionTimeOutVal(long sessionTimeOutVal) {
+        this.sessionTimeOutVal = sessionTimeOutVal;
+    }
+
+    public long getSessionTimeOutVal() {
+        return sessionTimeOutVal;
+    }
+
+    private long sessionTimeOutVal;
     public Chat(int chatId, int profileLogo, String profileName, String latestChat, File chatArray, boolean isFirstPrompt, String sessionKey, long sessionStartTime) {
         this.chatId = chatId;
         this.mProfileLogo = profileLogo;
@@ -48,6 +66,7 @@ public class Chat implements Serializable {
         this.isFirstPrompt = isFirstPrompt;
         this.sessionKey = sessionKey;
         this.sessionStartTime = sessionStartTime;
+        this.recordNumber = 0;
     }
 
     public int getProfileLogo() {

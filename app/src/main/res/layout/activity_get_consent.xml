@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".GetConsent">
+
+    <TextView
+        android:id="@+id/text_consent_form"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/consent_en"
+        android:layout_marginTop="16dp"
+        android:textSize="16sp"
+        android:background="@drawable/text_background"/>
+
+    <EditText
+        android:id="@+id/edit_investigator_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/text_consent_form"
+        android:hint="Investigator Name"
+        android:layout_marginTop="16dp" />
+
+    <ImageView
+        android:id="@+id/image_signature"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:layout_below="@id/button_signature"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="16dp"
+        android:visibility="gone" />
+
+    <Button
+        android:id="@+id/button_signature"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/edit_investigator_name"
+        android:text="Sign"
+        android:layout_marginTop="16dp" />
+
+</RelativeLayout>

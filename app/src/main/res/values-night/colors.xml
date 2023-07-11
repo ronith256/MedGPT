@@ -6,4 +6,5 @@
     <color name="outline_gray">#858585</color>
     <color name="black">#000000</color>
     <color name="text_login">@color/white</color>
+    <color name="background_color">#272727</color>
 </resources>
