@@ -11,13 +11,6 @@ public class Chat implements Serializable {
 
     private boolean consent;
     private int recordNumber = 0;
-    public void incrementRecordNumber(){
-        this.recordNumber++;
-    }
-
-    public int getRecordNumber(){
-        return this.recordNumber;
-    }
     public boolean isFirstPrompt() {
         return isFirstPrompt;
     }
