@@ -119,10 +119,6 @@ public class LoginActivity extends AppCompatActivity {
     private boolean isLoggedIn(){
         usr = sharedPreferences.getString("user","null");
         pwd = sharedPreferences.getString("password", null);
-//        File signatureFile = new File(getCacheDir(), "signature.png");
-//        if (signatureFile.exists()) {
-//            consent = true;
-//        }
         return !usr.equals("null") && !pwd.equals("null");
     }
 }
