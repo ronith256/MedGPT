@@ -9,6 +9,7 @@ public class Chat implements Serializable {
     private String mLatestChat;
     private int chatId;
 
+    private boolean consent;
     private int recordNumber = 0;
     public void incrementRecordNumber(){
         this.recordNumber++;
@@ -92,6 +93,14 @@ public class Chat implements Serializable {
 
     public File getChatArray(){
         return chatArray;
+    }
+
+    public void setConsent(boolean a){
+        this.consent = a;
+    }
+
+    public boolean getConsent(){
+        return this.consent;
     }
 
 

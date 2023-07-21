@@ -30,11 +30,6 @@ android {
 }
 
 dependencies {
-    implementation 'com.amazonaws:aws-android-sdk-s3:2.16.6'
-    implementation 'com.amazonaws:aws-android-sdk-core:2.16.6'
-    implementation 'com.amazonaws:aws-android-sdk-ddb:2.16.6'
-    implementation 'com.amazonaws:aws-android-sdk-ddb-mapper:2.16.6'
-
     implementation 'se.warting.signature:signature-view:0.1.2'
 
     implementation 'com.google.code.gson:gson:2.8.9'

@@ -38,9 +38,9 @@ public class SettingsDialogFragment extends DialogFragment {
         ipAddressEditText = view.findViewById(R.id.ip_address);
         Button saveButton = view.findViewById(R.id.save_button);
 
-        String sessionTime = requireContext().getSharedPreferences("session", MODE_PRIVATE).getString("timeout", "600");
+        String sessionTime = requireContext().getSharedPreferences("session", MODE_PRIVATE).getString("timeout", "3600");
         String httpTimeOut = requireContext().getSharedPreferences("session", MODE_PRIVATE).getString("http", "300");
-        String ipAddress = requireContext().getSharedPreferences("session", MODE_PRIVATE).getString("ip", "ip here");
+        String ipAddress = requireContext().getSharedPreferences("session", MODE_PRIVATE).getString("ip", "http://13.235.27.136");
         if(!ipAddress.contains("http")){
             ipAddress = "http://" + ipAddress;
         }

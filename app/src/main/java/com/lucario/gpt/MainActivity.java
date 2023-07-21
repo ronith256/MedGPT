@@ -1,7 +1,9 @@
 package com.lucario.gpt;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Environment;
 import android.widget.ImageButton;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -23,19 +25,15 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements ChatAdapter.onClick, ChatAdapter.deleteItem{
 
-    private RecyclerView mRecyclerView;
     private ChatAdapter mAdapter;
     private List<Chat> mChatList;
-
-    private FloatingActionButton newChatButton;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-//        Objects.requireNonNull(getSupportActionBar()).hide();
-        mRecyclerView = findViewById(R.id.chat_recycler_view);
+        RecyclerView mRecyclerView = findViewById(R.id.chat_recycler_view);
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         ImageButton settingsButton = findViewById(R.id.toolbar_settings);
@@ -44,7 +42,17 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.onCli
             dialog.show(getSupportFragmentManager(), "SettingsDialogFragment");
         });
 
-        newChatButton = findViewById(R.id.fab_new_chat);
+        ImageButton logoutButton = findViewById(R.id.logoutButton);
+        logoutButton.setOnClickListener(e->{
+            SharedPreferences sharedPreferences = getSharedPreferences("cred", MODE_PRIVATE);
+            sharedPreferences.edit().putString("user", "null").apply();
+            sharedPreferences.edit().putString("password", "null").apply();
+            getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS).delete();
+            startActivity(new Intent(MainActivity.this, LoginActivity.class));
+            finish();
+        });
+
+        FloatingActionButton newChatButton = findViewById(R.id.fab_new_chat);
         mChatList = new ArrayList<>();
         loadChatList();
 
@@ -74,10 +82,8 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.onCli
             oos.writeObject(mChatList);
             oos.close();
             fos.close();
-//            Toast.makeText(this, "Chat list saved", Toast.LENGTH_SHORT).show();
         } catch (IOException e) {
             e.printStackTrace();
-//            Toast.makeText(this, "Save failed", Toast.LENGTH_SHORT).show();
         }
     }
 
