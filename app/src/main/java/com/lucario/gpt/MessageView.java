@@ -14,7 +14,9 @@ import android.print.PrintAttributes;
 import android.util.Base64;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.webkit.WebChromeClient;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
@@ -154,6 +156,7 @@ public class MessageView extends AppCompatActivity implements MessageAdapter.Mes
                             chat.setConsent(data.getBooleanExtra("consent", false));
                             String name = data.getStringExtra("name");
                             String filename = data.getStringExtra("filename");
+                            System.out.println(filename);
                             new UploadConsentTask().doInBackground(filename, name);
                         }
                     } else if (result.getResultCode() == Activity.RESULT_CANCELED) {
@@ -531,6 +534,13 @@ public class MessageView extends AppCompatActivity implements MessageAdapter.Mes
 
         public Boolean doInBackground(String... strings) {
             WebView webView = findViewById(R.id.webview);
+            webView.setWebViewClient(new WebViewClient(){
+                @Override
+                public void onPageFinished(WebView view, String url) {
+                    super.onPageFinished(view, url);
+                    createWebPrintJob(view);
+                }
+            });
             webView.setVisibility(View.VISIBLE);
             String filename = strings[0];
             String name = strings[1];
@@ -538,7 +548,6 @@ public class MessageView extends AppCompatActivity implements MessageAdapter.Mes
             filename = imageToBase64(filename);
             String html = getHtml(currentDateTime, name, filename);
             webView.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null);
-            createWebPrintJob(webView);
             return null;
         }
 

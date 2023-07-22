@@ -85,7 +85,7 @@ public class LoginActivity extends AppCompatActivity {
                     .build();
 
             Request request = new Request.Builder()
-                    .url("http://13.235.27.136/login-app")
+                    .url("http://13.235.27.136/login?client=app")
                     .post(formBody)
                     .addHeader("Accept", "application/json")
                     .build();
