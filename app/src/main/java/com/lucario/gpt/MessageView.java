@@ -9,6 +9,8 @@ import android.graphics.BitmapFactory;
 import android.icu.text.SimpleDateFormat;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
 import android.print.PdfPrint;
 import android.print.PrintAttributes;
 import android.util.Base64;
@@ -96,6 +98,9 @@ public class MessageView extends AppCompatActivity implements MessageAdapter.Mes
 
     private ImageButton endSessionButton;
 
+    private String pdfFile;
+    private String name;
+
     private int consentRequestTimes = 0;
     @Override
     protected void onStart() {
@@ -106,7 +111,8 @@ public class MessageView extends AppCompatActivity implements MessageAdapter.Mes
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        pdfFile = getIntent().getStringExtra("filename");
+        name = getIntent().getStringExtra("name");
         username = getSharedPreferences("cred", MODE_PRIVATE).getString("user", "null");
         password = getSharedPreferences("cred", MODE_PRIVATE).getString("password", "null");
         BASE_URL = getSharedPreferences("session", MODE_PRIVATE).getString("ip", "http://13.235.27.136");
@@ -147,27 +153,6 @@ public class MessageView extends AppCompatActivity implements MessageAdapter.Mes
             }).start();
         });
 
-        launcher = registerForActivityResult(
-                new ActivityResultContracts.StartActivityForResult(),
-                result -> {
-                    if (result.getResultCode() == Activity.RESULT_OK) {
-                        Intent data = result.getData();
-                        if (data != null) {
-                            chat.setConsent(data.getBooleanExtra("consent", false));
-                            String name = data.getStringExtra("name");
-                            String filename = data.getStringExtra("filename");
-                            System.out.println(filename);
-                            new UploadConsentTask().doInBackground(filename, name);
-                        }
-                    } else if (result.getResultCode() == Activity.RESULT_CANCELED) {
-                        if(consentRequestTimes > 3){
-                            Toast.makeText(this, "Maximum tries exceeded", Toast.LENGTH_SHORT).show();
-                            finish();
-                        }
-                    }
-                }
-        );
-
 
         timerText = findViewById(R.id.timeout);
         mChatList = (List<Chat>) getIntent().getSerializableExtra("chatList");
@@ -180,6 +165,16 @@ public class MessageView extends AppCompatActivity implements MessageAdapter.Mes
 
         mTimer = new Timer();
         updateTimeTask = createTimerTask();
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while(!chat.sessionKeyExists());
+                if(chat.getSessionKey()!=null && !chat.getConsent()){
+                    new Handler(Looper.getMainLooper()).post(() -> new UploadConsentTask().doInBackground(pdfFile, name));
+                }
+            }
+        }).start();
 
         if (chat.getSessionStartTime() != 0) {
             if (System.currentTimeMillis() - chat.getSessionStartTime() > chat.getSessionTimeOutVal()) {
@@ -466,7 +461,6 @@ public class MessageView extends AppCompatActivity implements MessageAdapter.Mes
                     try {
                         JSONObject jsonObject = new JSONObject(responseBody);
                         chat.setSessionKey(jsonObject.getString("session-key"));
-                        launcher.launch(new Intent(MessageView.this, GetConsent.class).putExtra("sessionKey", chat.getSessionKey()));
                         chat.setSessionTimeOutVal(sessionTimeout* 1000L);
                         connectWebSocket(chat.getSessionKey());
                         chat.setSessionStartTime(System.currentTimeMillis());
@@ -762,6 +756,7 @@ public class MessageView extends AppCompatActivity implements MessageAdapter.Mes
                 try {
                     Response response = client.newCall(request).execute();
                     System.out.println(response.body().string());
+                    chat.setConsent(true);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

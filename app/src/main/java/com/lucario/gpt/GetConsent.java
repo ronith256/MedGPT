@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.Environment;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -33,11 +35,32 @@ public class GetConsent extends AppCompatActivity {
         setContentView(R.layout.activity_get_consent);
         editInvestigatorName = findViewById(R.id.edit_investigator_name);
         buttonSignature = findViewById(R.id.button_signature);
+        buttonSignature.setEnabled(false);
 
         signaturePad = findViewById(R.id.signature_pad);
         int color = ContextCompat.getColor(this, R.color.background_color);
         signaturePad.setBackgroundColor(color);
         signatureFile = new File(getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), (sessionKey + ".png"));
+        editInvestigatorName.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                if(charSequence.length() > 2){
+                    buttonSignature.setEnabled(true);
+                } else {
+                    buttonSignature.setEnabled(false);
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+
+            }
+        });
         buttonSignature.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -56,10 +79,10 @@ public class GetConsent extends AppCompatActivity {
                 }
 
                 String investigatorName = editInvestigatorName.getText().toString();
-                if(editInvestigatorName.getText()!=null) {
+                if(investigatorName.length() > 2) {
                     Intent resultIntent = new Intent();
                     resultIntent.putExtra("consent", true);
-                    resultIntent.putExtra("name", editInvestigatorName.getText().toString());
+                    resultIntent.putExtra("name", investigatorName);
                     resultIntent.putExtra("filename", signatureFile.getAbsolutePath());
                     setResult(Activity.RESULT_OK, resultIntent);
                     finish();

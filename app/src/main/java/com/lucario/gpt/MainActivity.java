@@ -1,11 +1,15 @@
 package com.lucario.gpt;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Environment;
 import android.widget.ImageButton;
+import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -27,7 +31,10 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.onCli
 
     private ChatAdapter mAdapter;
     private List<Chat> mChatList;
+    private ActivityResultLauncher<Intent> launcher;
+    private Intent messageViewIntent;
 
+    private int consentRequestTimes = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,21 +59,43 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.onCli
             finish();
         });
 
+        launcher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == Activity.RESULT_OK) {
+                        Intent data = result.getData();
+                        if (data != null) {
+                            String name = data.getStringExtra("name");
+                            String filename = data.getStringExtra("filename");
+                            messageViewIntent = new Intent(MainActivity.this, MessageView.class);
+                            messageViewIntent.putExtra("filename", filename);
+                            messageViewIntent.putExtra("name", name);
+                            Chat chat = new Chat(mChatList.size()+1, 0, "null", "null", new File(String.valueOf(System.currentTimeMillis())), true, null, 0);
+                            mChatList.add(chat);
+                            saveChatList();
+                            messageViewIntent.putExtra("chat", mChatList.size()-1);
+                            messageViewIntent.putExtra("chatList", (Serializable) mChatList);
+                            startActivity(messageViewIntent);
+                            mAdapter.setChatList(mChatList);
+                            mAdapter.notifyItemInserted(mChatList.size());
+                            finish();
+//                            System.out.println(filename);
+//                            new MessageView.UploadConsentTask().doInBackground(filename, name);
+                        }
+                    } else if (result.getResultCode() == Activity.RESULT_CANCELED) {
+                        if(consentRequestTimes > 3){
+                            Toast.makeText(this, "Maximum tries exceeded", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                }
+        );
+
         FloatingActionButton newChatButton = findViewById(R.id.fab_new_chat);
         mChatList = new ArrayList<>();
         loadChatList();
 
         newChatButton.setOnClickListener(e->{
-           Chat chat = new Chat(mChatList.size()+1, 0, "null", "null", new File(String.valueOf(System.currentTimeMillis())), true, null, 0);
-           mChatList.add(chat);
-           saveChatList();
-           Intent intent = new Intent(MainActivity.this, MessageView.class);
-           intent.putExtra("chat", mChatList.size()-1);
-           intent.putExtra("chatList", (Serializable) mChatList);
-           startActivity(intent);
-           mAdapter.setChatList(mChatList);
-           mAdapter.notifyItemInserted(mChatList.size());
-           finish();
+            launcher.launch(new Intent(MainActivity.this, GetConsent.class).putExtra("sessionKey", Math.random()));
         });
         mAdapter = new ChatAdapter(this, mChatList, this, this);
         mRecyclerView.setAdapter(mAdapter);

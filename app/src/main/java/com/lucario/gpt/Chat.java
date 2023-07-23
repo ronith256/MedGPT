@@ -61,6 +61,7 @@ public class Chat implements Serializable {
         this.sessionKey = sessionKey;
         this.sessionStartTime = sessionStartTime;
         this.recordNumber = 0;
+        this.consent = false;
     }
 
     public int getProfileLogo() {
@@ -95,6 +96,8 @@ public class Chat implements Serializable {
     public boolean getConsent(){
         return this.consent;
     }
+
+    public boolean sessionKeyExists(){return sessionKey!=null;}
 
 
 }
