@@ -1,8 +1,11 @@
 package com.lucario.gpt;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -12,9 +15,11 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 
 import okhttp3.FormBody;
 import okhttp3.MediaType;
@@ -31,6 +36,10 @@ public class LoginActivity extends AppCompatActivity {
 
     private boolean buttonState = false;
     private SharedPreferences sharedPreferences;
+
+    private int consentRequestTimes = 0;
+
+    private ActivityResultLauncher<Intent> launcher;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -45,8 +54,28 @@ public class LoginActivity extends AppCompatActivity {
         username = findViewById(R.id.username);
         password = findViewById(R.id.password);
         loginButton = findViewById(R.id.loginButton);
-
         loginButton.setEnabled(false);
+
+        launcher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == Activity.RESULT_OK) {
+                        Intent data = result.getData();
+                        if (data != null) {
+                            String name = data.getStringExtra("name");
+                            String filename = data.getStringExtra("filename");
+                            sharedPreferences.edit().putString("inv-name",name).apply();
+                            sharedPreferences.edit().putString("sign-file-path", filename).apply();
+                            startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                            finish();
+                        }
+                    } else if (result.getResultCode() == Activity.RESULT_CANCELED) {
+                        if(consentRequestTimes > 3){
+                            Toast.makeText(this, "Maximum tries exceeded", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                }
+        );
         username.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
@@ -114,7 +143,7 @@ public class LoginActivity extends AppCompatActivity {
             if (success) {
                 sharedPreferences.edit().putString("user", username.getText().toString()).apply();
                 sharedPreferences.edit().putString("password", password.getText().toString()).apply();
-                startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                launcher.launch(new Intent(LoginActivity.this, GetConsent.class).putExtra("sessionKey", "inv-sign").putExtra("inv", true));
             } else {
                 showErrorDialog();
             }

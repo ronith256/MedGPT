@@ -42,7 +42,7 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.onCli
         setContentView(R.layout.activity_main);
         RecyclerView mRecyclerView = findViewById(R.id.chat_recycler_view);
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-
+        String investigatorName = getSharedPreferences("cred", MODE_PRIVATE).getString("inv-name", null);
         ImageButton settingsButton = findViewById(R.id.toolbar_settings);
         settingsButton.setOnClickListener(e->{
             SettingsDialogFragment dialog = new SettingsDialogFragment();
@@ -70,6 +70,8 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.onCli
                             messageViewIntent = new Intent(MainActivity.this, MessageView.class);
                             messageViewIntent.putExtra("filename", filename);
                             messageViewIntent.putExtra("name", name);
+                            messageViewIntent.putExtra("roleml", data.getStringExtra("roleml"));
+                            messageViewIntent.putExtra("role", data.getStringExtra("role"));
                             Chat chat = new Chat(mChatList.size()+1, 0, "null", "null", new File(String.valueOf(System.currentTimeMillis())), true, null, 0);
                             mChatList.add(chat);
                             saveChatList();
@@ -95,7 +97,10 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.onCli
         loadChatList();
 
         newChatButton.setOnClickListener(e->{
-            launcher.launch(new Intent(MainActivity.this, GetConsent.class).putExtra("sessionKey", Math.random()));
+            if(investigatorName==null){
+                logoutButton.performClick();
+            }
+            launcher.launch(new Intent(MainActivity.this, GetConsent.class).putExtra("sessionKey", String.valueOf(Math.random())).putExtra("name", investigatorName));
         });
         mAdapter = new ChatAdapter(this, mChatList, this, this);
         mRecyclerView.setAdapter(mAdapter);

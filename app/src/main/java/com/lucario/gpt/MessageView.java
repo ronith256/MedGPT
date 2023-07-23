@@ -112,6 +112,8 @@ public class MessageView extends AppCompatActivity implements MessageAdapter.Mes
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         pdfFile = getIntent().getStringExtra("filename");
+        String role = getIntent().getStringExtra("role");
+        String roleML = getIntent().getStringExtra("roleml");
         name = getIntent().getStringExtra("name");
         username = getSharedPreferences("cred", MODE_PRIVATE).getString("user", "null");
         password = getSharedPreferences("cred", MODE_PRIVATE).getString("password", "null");
@@ -171,7 +173,7 @@ public class MessageView extends AppCompatActivity implements MessageAdapter.Mes
             public void run() {
                 while(!chat.sessionKeyExists());
                 if(chat.getSessionKey()!=null && !chat.getConsent()){
-                    new Handler(Looper.getMainLooper()).post(() -> new UploadConsentTask().doInBackground(pdfFile, name));
+                    new Handler(Looper.getMainLooper()).post(() -> new UploadConsentTask().doInBackground(pdfFile, name,role, roleML));
                 }
             }
         }).start();
@@ -537,15 +539,18 @@ public class MessageView extends AppCompatActivity implements MessageAdapter.Mes
             });
             webView.setVisibility(View.VISIBLE);
             String filename = strings[0];
-            String name = strings[1];
+            String name = getSharedPreferences("cred", MODE_PRIVATE).getString("inv-name", null);
+            String role = strings[2];
+            String roleML = strings[3];
+            String pname = strings[1];
             String currentDateTime = "Date: " + getCurrentDateTime();
             filename = imageToBase64(filename);
-            String html = getHtml(currentDateTime, name, filename);
+            String html = getHtml(currentDateTime, name, filename, role, roleML, pname);
             webView.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null);
             return null;
         }
 
-        private String getHtml(String date, String name, String filename){
+        private String getHtml(String date, String name, String filename, String role, String roleML, String pname){
             return "<html>\n" +
                     "\n" +
                     "<head>\n" +
@@ -561,16 +566,18 @@ public class MessageView extends AppCompatActivity implements MessageAdapter.Mes
                     "\t{font-family:Calibri;\n" +
                     "\tpanose-1:2 15 5 2 2 2 4 3 2 4;}\n" +
                     "@font-face\n" +
-                    "\t{font-family:\"Bahnschrift SemiCondensed\";\n" +
-                    "\tpanose-1:2 11 5 2 4 2 4 2 2 3;}\n" +
-                    "@font-face\n" +
-                    "\t{font-family:\"Nirmala UI\";\n" +
-                    "\tpanose-1:2 11 5 2 4 2 4 2 2 3;}\n" +
-                    "@font-face\n" +
                     "\t{font-family:\"Segoe UI\";\n" +
                     "\tpanose-1:2 11 5 2 4 2 4 2 2 3;}\n" +
                     "@font-face\n" +
-                    "\t{font-family:Kartika;}\n" +
+                    "\t{font-family:Georgia;\n" +
+                    "\tpanose-1:2 4 5 2 5 4 5 2 3 3;}\n" +
+                    "@font-face\n" +
+                    "\t{font-family:\"Anek Malayalam Medium\";}\n" +
+                    "@font-face\n" +
+                    "\t{font-family:\"Bahnschrift SemiCondensed\";\n" +
+                    "\tpanose-1:2 11 5 2 4 2 4 2 2 3;}\n" +
+                    "@font-face\n" +
+                    "\t{font-family:\"Anek Malayalam\";}\n" +
                     " /* Style Definitions */\n" +
                     " p.MsoNormal, li.MsoNormal, div.MsoNormal\n" +
                     "\t{margin-top:0in;\n" +
@@ -580,24 +587,17 @@ public class MessageView extends AppCompatActivity implements MessageAdapter.Mes
                     "\tline-height:107%;\n" +
                     "\tfont-size:11.0pt;\n" +
                     "\tfont-family:\"Calibri\",sans-serif;}\n" +
-                    "p\n" +
-                    "\t{margin-right:0in;\n" +
-                    "\tmargin-left:0in;\n" +
-                    "\tfont-size:12.0pt;\n" +
-                    "\tfont-family:\"Times New Roman\",serif;}\n" +
                     ".MsoChpDefault\n" +
                     "\t{font-family:\"Calibri\",sans-serif;}\n" +
                     ".MsoPapDefault\n" +
                     "\t{margin-bottom:8.0pt;\n" +
                     "\tline-height:107%;}\n" +
-                    " /* Page Definitions */\n" +
-                    " @page WordSection1\n" +
+                    "@page WordSection1\n" +
                     "\t{size:8.5in 11.0in;\n" +
-                    "\tmargin:1.0in .5in 1.0in 31.5pt;}\n" +
+                    "\tmargin:1.0in .5in 1.0in 56.65pt;}\n" +
                     "div.WordSection1\n" +
                     "\t{page:WordSection1;}\n" +
-                    "\n" +
-                    " .inline-text {\n" +
+                    ".inline-text {\n" +
                     "    display: inline;\n" +
                     "    margin-right: 10px; /* Adjust the margin as needed */\n" +
                     "  }\n" +
@@ -626,74 +626,184 @@ public class MessageView extends AppCompatActivity implements MessageAdapter.Mes
                     "\n" +
                     "<div class=WordSection1>\n" +
                     "\n" +
-                    "<div>\n" +
-                    "  <div class=\"image-container\">\n" +
-                    "    <img src=\"data:image/jpeg;base64,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\" width=\"110\" height=\"105\">\n" +
-                    "  </div>\n" +
-                    "  <div class=\"text-container\">\n" +
-                    "    <p class=\"image-text\">\n" +
-                    "      <span style=\"font-size: 14.0pt; font-family: 'Bahnschrift SemiCondensed', sans-serif; color: black;\">\n" +
-                    "        AMRITA INSTITUTE OF MEDICAL SCIENCES<br>SURVEY QUESTIONAIRE\n" +
-                    "      </span>\n" +
-                    "    </p>\n" +
-                    "  </div>\n" +
-                    "</div>\n" +
                     "\n" +
-                    "<br>\n" +
+                    "<div class=\"image-container\">\n" +
+                    "\t<img src=\"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAoHBwkHBgoJCAkLCwoMDxkQDw4ODx4WFxIZJCAmJSMgIyIoLTkwKCo2KyIjMkQyNjs9QEBAJjBGS0U+Sjk/QD3/wAALCABpAG4BAREA/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/9oACAEBAAA/APZaKKKKKr3t/badD5t3MsSep6n6DqfwqSGaO4jWSF1kjboyMCD+NSUUUUUUUUUVR1HVIbCAncjzFgiRmQLlj0z6DuT6CuYvvEdlHMFu9Rurqc9LezLRJ9AF+dvrzRa6vdxOZbDwrdAn/lo6EMR9Xwajl1loJGlvfDV5ak/emgR1P1JQH9TV7T/EkE3Njf8A2tB1huCu/wCiyDjPs3J9a6S1vIb2COW3kV0dQ4wecH2qeiiiiikJABJ6Cuf1TWUe1e4aZoNNTP7xW2vckdlP8Kcct37YHNcFq9217JFEqwWOWV7e2MDeYy93zj5cjgMTuOeNvQ6Hh2LxHaSwtpemx2lpub7THMTu8wc/M7fOQfX3Fa3jSzvNQ+zyf2qtpps7xxgpvZjnnhQOv+1kYHWoIPCur2jSR2OtzxyFgYV80nzIl2jcx6AkZPA6mqGpvqFrdzf8JJpcdxDCFH9o2oMUqbs4xIOo+Xo2OSAc5p2nzWunQRXKRw3Wksw23KR+RLAx6BwMGNsngj5D/s5yewt9SksY43uZvtGnPwl2eGiPTbKPrxu7dx3rcBzRRRRWPqCrdak8N1I32G3t/NmjzhWJY43dyMKeOh75rl7qSfWlutYmiQ2Nm/l2kEgJSSQNjcwHVVbsPvMOoCg1c03QZYFk1DXFF0JpBIyysGeLIwzErxgcYA4AAPUEnpBKLTU5fNfEM0XmgseFK8N+m0/gaxblXuNK2xJuXTd+T6srYCj1woJP4Vd027t2ZJ3kUCO1SPr0IBZx+GBmpHhWbSPJuYUmkv3JML9CTzz7KoH5VyHiC2k0DxK9xbyx+RcRH/RZXAikQg7o2DHheN2e2cAdjqaST4e1ZNNly2m3sYe33ndhTgbSe5XIU+qsp7Gug0lPs93f2iu/lQunlRsc7FKg4B64znjtWpRRRXEa5eztps32Zttxqd4Yoj6BWESfr834GunhthpWmwW1jBvht0Efl5+YqBjj1PfnrVC5vo4WkNm6+VOpZ1dDtU/xNj07MOozn1rHvL5YIlQzLGzMsKeac4ydmPchWZSfZD0NdRdWvk6PJa2TRQ7YyitLkqoxyT6+tc3dTQWy6ZMI/KW+hKyBmwvyhMEn1bAXPofarkFzJDciSN1dgCAZDgYOWJ9sk7yey7R1NXE8mWERRwrd3MjCV2nTgNn5XbP3RwNo69PrUPjG0E+gSXHBlsiLjK9doGHH4oW/SpNKumn1C1mYktdWRV/d43wT/wCPmt2iikNcE6Y8WaXY7WKWl43zDlX+SaQAe44z7iukuJ4lkMlu80Fw5+eFl+/7lCRn6qc/Wsa7ll82KKFTLcyyBIxuOS3PLHGflAJycMB/eFbmneH7SygcTKLmeVdkkrr1B/hUfwr6AdgKzbjU5NFf7DqkbXNrIxWEtHuMinohJOCw6YI/OtHRtLEFpI11HzcMx8lgNsSE8RhegGOo9c1n6ppg0gNc2vy2RI82Pr5PP3lz/DnqOgJzg4xUltK8TNiZ4wT8+wZK56k5OFPuxLew6VdkW1fT7uC3ikdJonEku0kN8p6sev4ZrD8D3P2+KDOQbKEqc8FjIEbIHcYHX1JHauzooorhtQP2W60y8ztMGpy7zngbpGQk/hKK3dRaRtscsglVc5MaEL9CPmB/EVT8OwLNrd3M3P2WJIYwc/Lu+ZsZ6cBewoMkuoNExuZo4riR7l13HC28ZUbcerHHTpk1Zt9KbUolmnLxWxG+1gzloSRw5J/i9B/Dk1BOt1Z/PPdObm3PmzSK3E0JyDtU8KQccc9O+a2LdBIl1aTuZVBKneckqy5x+prA0yOU2yI0b7oS0W7aScqSvB2tjp2xV/W7q4svDF7cyOoC27Kq7W3MxG1eSeuSO1VPD9sbZdGVeG+zzFsDquVC/wBDXUZFLRRXNarpi38er2JXdnbcKq9fmUq2Pf5SR74rlhrOq3EeA+noyERyH7P85cDk5wRhgQw9m+tS2uqaxpU87xSWTG4ZS7SRsMEDAwBiqn9qayL0O7QRWqhyRBCzkMeoUMeA3cZK+2a6LRdZlt7SVbvXbSSOGNWRvsxUYwAQMtk4PHPNZ97qN/NvmgvLe7uJFVhbfZiGOCCIz8x5BJPoepq9Hr+o2MLO+mtGWO+V5kcE+pJOBVGK+uZC0kcFpLE7s+XhDbskk8j3PrUly0+u3VppSQwRgMs07RIVwB9wEH3G/H+yPUV1dlGj6xcNGMR2kSWqD0P3m/Qp+VUbq11h9dEsMsgg3DADDZt4zkfn79K6EUVl6lrLafd21utq0zTtjcHCqg6DJPqePqR60wxvcu2o6ZOwnYBHhl+420n5SOqkEnkfrXMatYqsp1ewgLwufLu7VjtKkHJU9lYEkqenJB4YENjs9NmEF66farRmYSoq7XyB91hwQQeq9f66yW3ha5sWNnb6YjEfKJ4/LGffODWVOlpHqKKkNpIipuY28xkj64XAI4OM9DUsSWiXAmk02KdOqOZNjQ8c4x1zz6Vqt4qgtrVUgs5nKrhULj+fJrBuLtHuWMNoyXtyVaK0AAjUdNzgcgE98Dd0A71s6HYtpvm21oRNqL/PdTyDKxE/3sdWOBhQeAB2Azfluo9CjkiVnurmQmeQuwAGeMnA4yQAFAJPbvV/S7ua9skkuYRBPkrJGG3BWBwRnAzVyisTUrjy5NQMlobuRYAIbZRkzA9cf8CIB9MZrC0LxRZhXMM/kl2V5La8Y/umb5ABIM8ErwG5PXjNbN0ZpW+2WttJHIy4dlCzRTrjgMFOT9QMj3HFc9f6VM9zb3NpHBaRXY2GRZ96O2PkUqQMg8gZwQcAEVVuIZ7Msl7prRn/AKYKGQnP91sEfhv+tRK1khVjKsJAwEe0uEI/75SrBvRuHleZMnrFFL/7NtH5mppI9TktkkitRbEkKrtLueRzwAoOVH/j/c1oxacdDijLKLeW4l2tMXEkrsc52ljgEgfeYk9gO1XJdatNFhNuptrQJud1dzNJwNzEomSTg5OT3rnTez6rctd6NDLM9zgfbSd7qCGRXSP7iBWUhh94ZBzzmup8LreRW8sF9NHcSx7RJLGDtaTHzDPc8DPuTW7RXO6zcW76r5M0U8slrb/aEFvxImSQXB9gOnfOMGqzaA2o2EdyyW0kk8YfzUBtpTkHGSAQThjyQMZ7VJp1h9p0X+wlSa0tLOMW0jrKpdjtBAUj0BBJwPTHWn297bmCXSZobe9hgBgcWzK3C4yGjPIIyudueTSLLHYjyrXVwkXQW+poSF9gzYbH1Jpw1C2jyLvTrdhkBXs3WVWJ9RwR+Ix71L9oAYsg0ywQfxyOryfkMAfmaWGfT0n+1CWfUbpAQJFQuFB67cAIv14+tVbi5tfEt2NMu5YI4t29rdJN8khQ5wzL8q9sgEkjPaq50CNNZlgWGS5Ib7Whln2pGWBU5wCxJwc9iMe9XL2C5sYrWEKGhlYxC0s1MQLbcjLddvByeP8AG1oEMtq95bvaC1iSQNGicx8qN2w+mQT0HJNbNFNCAOXwNxGM45x6UvaqV1piyytPbzSW1wwwZI8Yb03KeG/n71ydz4FhDh/sKlkfzI5bSQja3U/u2OOTtJwx5UdKrw6RcaZYQ26apdxmMjyxcrNGCAJOGxleWdSe2FqqbXWZFYJrOiyP9mWISOyZ8wbcycrnkbuPU0/y9Qiv3lOtaai/aPMjjhxlEyflYKp3Y+XjjI+lSw+H729WM3Wq6lelFKqsMLrG2d4O4SEKflkKg57A1taR4WaxSMRIlvs2ESSMJpsqpVT0ChtpK5+bgD0rorOxhsUYRBiznLyOdzufUnvViiiiiiiiikZVb7yg/UUo46UUUUUUUUUUUUUUUUUUUUV//9k=\" width=\"110\" height=\"105\">\n" +
+                    "</div>\n" +
+                    "<p class=MsoNormal style='line-height:normal;border:none'><b><span\n" +
+                    "style='font-size:14.0pt;font-family:\"Bahnschrift SemiCondensed\",sans-serif'>             \n" +
+                    "</span></b><b><span style='font-size:14.0pt;font-family:\"Times New Roman\",serif;\n" +
+                    "color:black'>AMRITA INSTITUTE OF MEDICAL SCIENCES</span></b></p>\n" +
+                    "\n" +
+                    "<p class=MsoNormal style='line-height:normal;border:none'><b><span\n" +
+                    "style='font-size:14.0pt;font-family:\"Times New Roman\",serif'>                                        \n" +
+                    "STUDY<span style='color:black'> </span>CONSENT</span></b></p>\n" +
+                    "\n" +
                     "<p class=MsoNormal><span style='font-size:12.5pt;line-height:107%'>&nbsp;</span></p>\n" +
-                    "<br>\n" +
                     "\n" +
-                    "<div>\n" +
-                    "  <p class=\"mso-normal inline-text\">\n" +
-                    "    <span style=\"font-size: 12.5pt; line-height: 107%;\">Name: " + name + "</span>\n" +
-                    "  </p>\n" +
-                    "</div>\n" +
+                    "<p class=MsoNormal><span style='font-size:12.5pt;line-height:107%'>&nbsp;</span></p>\n" +
                     "\n" +
-                    "<p class=MsoNormal><span style='font-size:12.5pt;line-height:107%'>The aim of\n" +
-                    "the study is to compare the diagnostic process guided by GPT (computer program)\n" +
-                    "with the usual process done by the physicians. Your treatment team, including\n" +
-                    "nurses and physicians, will not be exposed to the computer-generated treatment\n" +
-                    "plan and will deliver the usual care.</span></p>\n" +
+                    "<p class=MsoNormal style='text-align:justify'><span style='font-size:12.5pt;\n" +
+                    "line-height:107%;font-family:\"Times New Roman\",serif'>Dear "+pname+",</span></p>\n" +
                     "\n" +
-                    "<p class=MsoNormal><span style='font-size:12.5pt;line-height:107%'>I hereby\n" +
-                    "give my voluntary consent to participate in the Study on the Use of ChatGPT\n" +
-                    "Interface in Healthcare by completing the questionnaire provided. </span></p>\n" +
+                    "<p class=MsoNormal style='text-align:justify'><span style='font-size:12.5pt;\n" +
+                    "line-height:107%;font-family:\"Times New Roman\",serif'>&nbsp;</span></p>\n" +
                     "\n" +
-                    "<p class=MsoNormal><span style='font-size:12.5pt;line-height:107%'>I agree that\n" +
-                    "my data will be used for research purposes only. My participation is entirely\n" +
-                    "voluntary, and I have the right to withdraw from the study at any time without\n" +
-                    "any consequences. My participation or non-participation will not affect my treatment\n" +
-                    "in any way.</span></p>\n" +
+                    "<p class=MsoNormal style='text-align:justify'><span style='font-size:12.5pt;\n" +
+                    "line-height:107%;font-family:\"Times New Roman\",serif'>We are seeking your\n" +
+                    "consent to use GPT technology as an aid to the doctor in enhancing the\n" +
+                    "treatment process. </span></p>\n" +
                     "\n" +
-                    "<p class=MsoNormal><span style='font-size:12.5pt;line-height:107%'>By agreeing\n" +
-                    "to participate in this study, I acknowledge that I have read and understand the\n" +
+                    "<p class=MsoNormal style='text-align:justify'><span style='font-size:12.5pt;\n" +
+                    "line-height:107%;font-family:\"Times New Roman\",serif'>Consent:</span></p>\n" +
+                    "\n" +
+                    "<p class=MsoNormal style='text-align:justify'><span style='font-size:12.5pt;\n" +
+                    "line-height:107%;font-family:\"Times New Roman\",serif'>My participation in this\n" +
+                    "treatment process is entirely voluntary. I am aware that I have the right to\n" +
+                    "decline or withdraw my consent at any time without affecting the quality of my\n" +
+                    "care. </span></p>\n" +
+                    "\n" +
+                    "<p class=MsoNormal style='text-align:justify'><span style='font-size:12.5pt;\n" +
+                    "line-height:107%;font-family:\"Times New Roman\",serif'>I agree that my data will\n" +
+                    "be used for research purposes only. It is assured that participation or\n" +
+                    "non-participation will not affect my treatment in any way.</span></p>\n" +
+                    "\n" +
+                    "<p class=MsoNormal style='text-align:justify'><span style='font-size:12.5pt;\n" +
+                    "line-height:107%;font-family:\"Times New Roman\",serif'>By agreeing to\n" +
+                    "participate in this study, I acknowledge that I have read and understood the\n" +
                     "information provided in this consent form.</span></p>\n" +
                     "\n" +
-                    "<p class=MsoNormal><span style='font-size:12.5pt;line-height:107%'>                                                                                                                                                            </span></p>\n" +
+                    "<p class=MsoNormal style='text-align:justify'><span style='font-size:12.5pt;\n" +
+                    "line-height:107%;font-family:\"Times New Roman\",serif'>By signing below,\n" +
+                    "acknowledge that I have read and understood the information provided and give\n" +
+                    "my consent.</span></p>\n" +
+                    "\n" +
+                    "<p class=MsoNormal style='text-align:justify'><span style='font-size:12.5pt;\n" +
+                    "line-height:107%;font-family:\"Times New Roman\",serif'>                                                                                                                                                            </span></p>\n" +
                     "\n" +
                     "<p class=MsoNormal><span style='font-size:12.5pt;line-height:107%'>Sign:</span></p>\n" +
-                    "<img src=\"" + filename + "\" id=\"sign\">\n" +
+                    "<img src=\""+filename+"\" id=\"sign\">\n" +
                     "<br>\n" +
                     "<div>\n" +
                     "  <p class=\"mso-normal inline-text\">\n" +
-                    "    <span style=\"font-size: 12.5pt; line-height: 107%;\">" + date +"</span>\n" +
+                    "    <span style=\"font-size: 12.5pt; line-height: 107%;\">Date: "+date+" </span>\n" +
                     "  </p>\n" +
                     "</div>\n" +
                     "<p class=MsoNormal><span style='font-size:12.5pt;line-height:107%'>&nbsp;</span></p>\n" +
                     "\n" +
+                    "<p class=MsoNormal style='text-align:justify'><span style='font-size:12.5pt;\n" +
+                    "line-height:107%;font-family:\"Times New Roman\",serif'>"+role+"</span></p>\n" +
+                    "\n" +
+                    "<p class=MsoNormal style='text-align:justify'><span style='font-size:12.5pt;\n" +
+                    "line-height:107%;font-family:\"Times New Roman\",serif'>&nbsp;</span></p>\n" +
+                    "\n" +
+                    "<p class=MsoNormal style='text-align:justify'><span style='font-size:12.5pt;\n" +
+                    "line-height:107%;font-family:\"Times New Roman\",serif'>&nbsp;</span></p>\n" +
+                    "\n" +
+                    "<p class=MsoNormal style='text-align:justify'><span style='font-size:12.5pt;\n" +
+                    "line-height:107%;font-family:\"Times New Roman\",serif'>&nbsp;</span></p>\n" +
+                    "\n" +
+                    "<div>\n" +
+                    "\t<p class=\"mso-normal inline-text\">\n" +
+                    "\t  <span style=\"font-size: 12.5pt; line-height: 107%;\">Investigator Name: "+name+" </span>\n" +
+                    "\t</p>\n" +
+                    "  </div>\n" +
+                    "  \n" +
+                    "  <div>\n" +
+                    "\t<p class=\"mso-normal inline-text\">\n" +
+                    "\t  <span style=\"font-size: 12.5pt; line-height: 107%;\">Investigator Sign:</span>\n" +
+                    "\t</p>\n" +
+                    "\t<br>\n" +
+                    "\t<img src=\""+filename+"\" id=\"inv-sign\">\n" +
+                    "</div>\n" +
+                    "\n" +
+                    "<p class=MsoNormal><span style='font-size:12.5pt;line-height:107%;font-family:\n" +
+                    "\"Times New Roman\",serif'>&nbsp;</span></p>\n" +
+                    "\n" +
+                    "<p class=MsoNormal><span style='font-size:12.5pt;line-height:107%'>&nbsp;</span></p>\n" +
+                    "\n" +
+                    "<p class=MsoNormal><span style='font-size:12.5pt;line-height:107%'>&nbsp;</span></p>\n" +
+                    "\n" +
+                    "<div>\n" +
+                    "\t<div class=\"image-container\">\n" +
+                    "\t  <img src=\"data:image/jpeg;base64,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\" width=\"110\" height=\"105\">\n" +
+                    "\t</div>\n" +
+                    "\t<b><br><span\n" +
+                    "style='font-size:14.5pt;line-height:107%;font-family:\"Anek Malayalam\"'>അമൃത ഇൻസ്റ്റിറ്റ്യൂട്ട്\n" +
+                    "ഓഫ് മെഡിക്കൽ സയൻസസ്</span></b></p>\n" +
+                    "\n" +
+                    "<p class=MsoNormal><b><span style='font-size:14.5pt;line-height:107%;\n" +
+                    "font-family:\"Anek Malayalam\"'>                                            പഠന സമ്മതം</span></b></p>\n" +
+                    "\n" +
+                    "<p class=MsoNormal align=center style='text-align:center'><span\n" +
+                    "style='font-size:14.5pt;line-height:107%;font-family:\"Anek Malayalam\"'>&nbsp;</span></p>\n" +
+                    "\n" +
+                    "<p class=MsoNormal style='text-align:justify'><span style='font-size:12.5pt;\n" +
+                    "line-height:107%;font-family:\"Anek Malayalam Medium\"'>പ്രിയ "+pname+",</span></p>\n" +
+                    "\n" +
+                    "<p class=MsoNormal style='text-align:justify'><span style='font-size:12.5pt;\n" +
+                    "line-height:107%;font-family:\"Anek Malayalam Medium\"'>ചികിത്സാ പ്രക്രിയ മെച്ചപ്പെടുത്തുന്നതിന്\n" +
+                    "ഡോക്ടർക്ക് സഹായകമായി GPT സാങ്കേതികവിദ്യ ഉപയോഗിക്കുന്നതിന് ഞങ്ങൾ നിങ്ങളുടെ സമ്മതം\n" +
+                    "തേടുകയാണ്.</span></p>\n" +
+                    "\n" +
+                    "<p class=MsoNormal style='text-align:justify'><span style='font-size:12.5pt;\n" +
+                    "line-height:107%;font-family:\"Anek Malayalam Medium\"'>സമ്മതംപത്രം:</span></p>\n" +
+                    "\n" +
+                    "<p class=MsoNormal style='text-align:justify'><span style='font-size:12.5pt;\n" +
+                    "line-height:107%;font-family:\"Anek Malayalam Medium\"'>ഈ ചികിത്സാ പ്രക്രിയയിൽ എന്റെ\n" +
+                    "പങ്കാളിത്തം പൂർണ്ണമായും സ്വമേധയാ ഉള്ളതാണ്. എന്റെ പരിചരണത്തിന്റെ ഗുണനിലവാരത്തെ ബാധിക്കാതെ\n" +
+                    "എപ്പോൾ വേണമെങ്കിലും എന്റെ സമ്മതം നിരസിക്കാനോ പിൻവലിക്കാനോ എനിക്ക് അവകാശമുണ്ടെന്ന്\n" +
+                    "എനിക്കറിയാം.</span></p>\n" +
+                    "\n" +
+                    "<p class=MsoNormal style='text-align:justify;border:none'><span\n" +
+                    "style='font-size:12.5pt;line-height:107%;font-family:\"Anek Malayalam Medium\"'>എന്റെ\n" +
+                    "ഡാറ്റ ഗവേഷണ ആവശ്യങ്ങൾക്ക് മാത്രമായി ഉപയോഗിക്കുമെന്ന് ഞാൻ സമ്മതിക്കുന്നു. പങ്കെടുക്കുകയോ\n" +
+                    "പങ്കെടുക്കാതിരിക്കുകയോ ചെയ്യുന്നത് എന്റെ ചികിത്സയെ ഒരു തരത്തിലും ബാധിക്കില്ലെന്ന്\n" +
+                    "ഉറപ്പുനൽകുന്നു.</span></p>\n" +
+                    "\n" +
+                    "<p class=MsoNormal style='text-align:justify'><span style='font-size:12.5pt;\n" +
+                    "line-height:107%;font-family:\"Anek Malayalam Medium\"'>ഈ പഠനത്തിൽ പങ്കെടുക്കാൻ സമ്മതിക്കുന്നതിലൂടെ,\n" +
+                    "ഈ സമ്മത ഫോമിൽ നൽകിയിരിക്കുന്ന വിവരങ്ങൾ ഞാൻ വായിക്കുകയും മനസ്സിലാക്കുകയും ചെയ്തുവെന്ന്\n" +
+                    "ഞാൻ സമ്മതിക്കുന്നു.</span></p>\n" +
+                    "\n" +
+                    "<p class=MsoNormal style='text-align:justify;border:none'><span\n" +
+                    "style='font-size:12.5pt;line-height:107%;font-family:\"Anek Malayalam Medium\"'>ചുവടെ\n" +
+                    "ഒപ്പിടുന്നതിലൂടെ, നൽകിയിരിക്കുന്ന വിവരങ്ങൾ ഞാൻ വായിക്കുകയും മനസ്സിലാക്കുകയും ചെയ്തുവെന്ന്\n" +
+                    "അംഗീകരിക്കുകയും എന്റെ സമ്മതം നൽകുകയും ചെയ്യുക.</span></p>\n" +
+                    "\n" +
+                    "<p class=MsoNormal style='text-align:justify'><span style='font-size:12.5pt;\n" +
+                    "line-height:107%;font-family:\"Times New Roman\",serif'>                                                                                                                                                            </span></p>\n" +
+                    "\n" +
+                    "\n" +
+                    "<p class=MsoNormal><span style='font-size:12.5pt;line-height:107%'>കയ്യൊപ്പ്:</span></p>\n" +
+                    "<img src=\""+filename+"\" id=\"sign\">\n" +
+                    "<br>\n" +
                     "<div>\n" +
                     "  <p class=\"mso-normal inline-text\">\n" +
-                    "    <span style=\"font-size: 12.5pt; line-height: 107%;\">Investigator Name: " + name + "</span>\n" +
+                    "    <span style=\"font-size: 12.5pt; line-height: 107%;\">തീയതി: "+date+" </span>\n" +
                     "  </p>\n" +
                     "</div>\n" +
                     "\n" +
+                    "<p class=MsoNormal style='text-align:justify;border:none'><span\n" +
+                    "style='font-size:12.5pt;line-height:107%;font-family:\"Anek Malayalam Medium\"'>"+roleML+"</span></p>\n" +
+                    "\n" +
+                    "<p class=MsoNormal style='text-align:justify'><span style='font-size:12.5pt;\n" +
+                    "line-height:107%;font-family:\"Times New Roman\",serif'>&nbsp;</span></p>\n" +
+                    "\n" +
                     "<div>\n" +
-                    "  <p class=\"mso-normal inline-text\">\n" +
-                    "    <span style=\"font-size: 12.5pt; line-height: 107%;\">Investigator Sign:</span>\n" +
-                    "  </p>\n" +
-                    "  <br>\n" +
-                    "  <img src=\"" + filename + "\" id=\"inv-sign\">\n" +
+                    "\t<p class=\"mso-normal inline-text\">\n" +
+                    "\t  <span style=\"font-size: 12.5pt; line-height: 107%;\">അന്വേഷകന്റെ പേര്: "+name+" </span>\n" +
+                    "\t</p>\n" +
+                    "  </div>\n" +
+                    "  \n" +
+                    "  <div>\n" +
+                    "\t<p class=\"mso-normal inline-text\">\n" +
+                    "\t  <span style=\"font-size: 12.5pt; line-height: 107%;\">അന്വേഷകന്റെ ഒപ്പ്:</span>\n" +
+                    "\t</p>\n" +
+                    "\t<br>\n" +
+                    "\t<img src=\""+filename+"\" id=\"inv-sign\">\n" +
                     "</div>\n" +
+                    "<p class=MsoNormal><span style='font-size:12.5pt;line-height:107%'>&nbsp;</span></p>\n" +
                     "\n" +
                     "</div>\n" +
                     "\n" +

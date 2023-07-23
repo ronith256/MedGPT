@@ -6,20 +6,6 @@
     android:layout_height="match_parent"
     tools:context=".GetConsent">
 
-    <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/language_switch"
-        android:layout_width="45dp"
-        android:layout_height="wrap_content"
-        android:text="EN"
-        android:visibility="visible"
-        android:layout_marginEnd="5dp"
-        app:layout_constraintBottom_toBottomOf="@+id/card"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/card"
-        app:layout_constraintVertical_bias="0" />
-
     <androidx.cardview.widget.CardView
         android:id="@+id/card"
         app:cardElevation="-15dp"
