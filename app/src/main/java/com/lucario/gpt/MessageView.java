@@ -123,6 +123,7 @@ public class MessageView extends AppCompatActivity implements MessageAdapter.Mes
         prevHttpTimeOut = httpSessionTimeout;
         WS_URL = BASE_URL.replace("http", "ws");
 
+
         setContentView(R.layout.message_view);
         client = new OkHttpClient.Builder().readTimeout(httpSessionTimeout, TimeUnit.SECONDS).writeTimeout(httpSessionTimeout, TimeUnit.SECONDS)
                 .connectTimeout(httpSessionTimeout, TimeUnit.SECONDS).build();
@@ -162,6 +163,14 @@ public class MessageView extends AppCompatActivity implements MessageAdapter.Mes
         chatFile = chat.getChatArray();
         messageList = new ArrayList<>();
         messageArray = new JSONArray();
+
+        boolean isOldChat = getIntent().getBooleanExtra("old-chat", false);
+        if(isOldChat && !chat.getConsent()){
+            mChatList.remove(getIntent().getIntExtra("chat", 0));
+            saveChatList("chat_list.ser",mChatList);
+            startActivity(new Intent(MessageView.this, MainActivity.class));
+            finish();
+        }
 
         loadChatList(chatFile);
 
@@ -511,7 +520,7 @@ public class MessageView extends AppCompatActivity implements MessageAdapter.Mes
     public void onBackPressed() {
         super.onBackPressed();
         startActivity(new Intent(MessageView.this, MainActivity.class));
-//        finish();
+        finish();
     }
 
     @Override
@@ -545,12 +554,13 @@ public class MessageView extends AppCompatActivity implements MessageAdapter.Mes
             String pname = strings[1];
             String currentDateTime = "Date: " + getCurrentDateTime();
             filename = imageToBase64(filename);
-            String html = getHtml(currentDateTime, name, filename, role, roleML, pname);
+            String invSign = imageToBase64(getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS) + "/inv-sign.png");
+            String html = getHtml(currentDateTime, name, filename, role, roleML, pname, invSign);
             webView.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null);
             return null;
         }
 
-        private String getHtml(String date, String name, String filename, String role, String roleML, String pname){
+        private String getHtml(String date, String name, String filename, String role, String roleML, String pname, String invSign){
             return "<html>\n" +
                     "\n" +
                     "<head>\n" +
@@ -714,7 +724,7 @@ public class MessageView extends AppCompatActivity implements MessageAdapter.Mes
                     "\t  <span style=\"font-size: 12.5pt; line-height: 107%;\">Investigator Sign:</span>\n" +
                     "\t</p>\n" +
                     "\t<br>\n" +
-                    "\t<img src=\""+filename+"\" id=\"inv-sign\">\n" +
+                    "\t<img src=\""+invSign+"\" id=\"inv-sign\">\n" +
                     "</div>\n" +
                     "\n" +
                     "<p class=MsoNormal><span style='font-size:12.5pt;line-height:107%;font-family:\n" +
@@ -801,7 +811,7 @@ public class MessageView extends AppCompatActivity implements MessageAdapter.Mes
                     "\t  <span style=\"font-size: 12.5pt; line-height: 107%;\">അന്വേഷകന്റെ ഒപ്പ്:</span>\n" +
                     "\t</p>\n" +
                     "\t<br>\n" +
-                    "\t<img src=\""+filename+"\" id=\"inv-sign\">\n" +
+                    "\t<img src=\""+invSign+"\" id=\"inv-sign\">\n" +
                     "</div>\n" +
                     "<p class=MsoNormal><span style='font-size:12.5pt;line-height:107%'>&nbsp;</span></p>\n" +
                     "\n" +

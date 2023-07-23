@@ -55,6 +55,7 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.onCli
             sharedPreferences.edit().putString("user", "null").apply();
             sharedPreferences.edit().putString("password", "null").apply();
             getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS).delete();
+            saveChatList(new ArrayList<>());
             startActivity(new Intent(MainActivity.this, LoginActivity.class));
             finish();
         });
@@ -121,6 +122,19 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.onCli
         }
     }
 
+    private void saveChatList(List <Chat> clear) {
+        // Write the chat list to a file
+        try {
+            FileOutputStream fos = openFileOutput("chat_list.ser", MODE_PRIVATE);
+            ObjectOutputStream oos = new ObjectOutputStream(fos);
+            oos.writeObject(clear);
+            oos.close();
+            fos.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void loadChatList() {
         // Read the chat list from a file
         try {
@@ -146,9 +160,11 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.onCli
         // Create an Intent to start a new activity
         Intent intent = new Intent(MainActivity.this, MessageView.class);
         intent.putExtra("chat", position);
+        intent.putExtra("old-chat", true);
         intent.putExtra("chatList", (Serializable) mChatList);
         // Start the new activity
         startActivity(intent);
+        finish();
     }
 
     @Override
